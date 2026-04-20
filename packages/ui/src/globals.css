@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Fixed: 변하지 않는 토큰 (기본 간격, 둥글기 등) */
+    --radius-default: 0.5rem;
+    --spacing-page: 2rem;
+
+    /* Variable: 테마에 따라 변경 가능한 요소 (색상) */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    
+    --brand-primary: 221.2 83.2% 53.3%;
+    --brand-secondary: 210 40% 96.1%;
+    
+    --status-success: 142.1 70.6% 45.3%;
+    --status-error: 0 84.2% 60.2%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    /* 다크모드 전용 색상 재정의 */
+  }
+}
