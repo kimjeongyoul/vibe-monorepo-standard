@@ -2,8 +2,8 @@ import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import { z } from "zod";
 
 /**
- * Zod Schema를 기반으로 하는 Type-Safe API Client
- * 서버 응답 데이터가 기대한 스키마와 일치하는지 런타임에 검증합니다.
+ * Zod Schema를 기반으로 하는 고신뢰성 Type-Safe API Client
+ * 서버 응답 데이터의 런타임 검증 및 내부 도메인 모델로의 자동 변환(Normalization)을 지원합니다.
  */
 class ApiClient {
   private axiosInstance: AxiosInstance;
@@ -15,7 +15,6 @@ class ApiClient {
       headers: { "Content-Type": "application/json" },
     });
 
-    // 요청 인터셉터: 공통 인증 토큰 처리 등
     this.axiosInstance.interceptors.request.use((config) => {
       const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
       if (token) {
@@ -26,14 +25,30 @@ class ApiClient {
   }
 
   /**
-   * Zod 스키마를 이용한 GET 요청
-   * @param url 요청 경로
-   * @param schema 데이터 검증용 Zod 스키마
+   * 기본적인 GET 요청 (데이터 검증 포함)
    */
   async get<T>(url: string, schema: z.ZodSchema<T>, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.axiosInstance.get(url, config);
-    // 런타임 스키마 검증: 서버 데이터가 오염되었거나 타입이 다르면 여기서 에러 발생
     return schema.parse(response.data);
+  }
+
+  /**
+   * 외부 API의 지저분한 데이터를 우리 도메인 객체로 변환하여 가져오기
+   * Anti-Corruption Layer(부패 방지 계층)의 핵심 기능을 수행합니다.
+   * 
+   * @param url API 주소
+   * @param schema 외부 데이터 검증용 Zod 스키마
+   * @param transformer 내부 모델로 변환할 함수
+   */
+  async getWithTransform<TExternal, TInternal>(
+    url: string,
+    schema: z.ZodSchema<TExternal>,
+    transformer: (data: TExternal) => TInternal,
+    config?: AxiosRequestConfig
+  ): Promise<TInternal> {
+    const response = await this.axiosInstance.get(url, config);
+    const validatedData = schema.parse(response.data);
+    return transformer(validatedData);
   }
 
   async post<T>(url: string, data: any, schema: z.ZodSchema<T>): Promise<T> {
